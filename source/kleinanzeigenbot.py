@@ -35,7 +35,8 @@ class KleinanzeigenBot:
         self.mainSet = set()
 
         for article in data.find_all('article'):
-            self.mainSet.add(article.a['href'])
+            # self.mainSet.add(article.a['href'])
+            self.mainSet.add(KleinanzeigenItem(article))
 
         self.invalid_link_flag = len(self.mainSet) <= 0
 
@@ -50,9 +51,46 @@ class KleinanzeigenBot:
 
         newSet = set()
         for article in data.find_all('article'):
-            newSet.add(article.a['href'])
+            # newSet.add(article.a['href'])
+            newSet.add(KleinanzeigenItem(article))
         
         newArticles = newSet.difference(self.mainSet)
         self.mainSet = newSet
 
         return newArticles
+    
+    def show_articles(self) -> None:
+        for item in self.mainSet:
+            print(item)
+
+    
+class KleinanzeigenItem:
+
+    def __init__(self, article) -> None:
+        self.url = article['data-href']
+        main = article.find('div', {'class' : 'aditem-main'})
+        self.title = main.a.string
+        self.location = main.find('div', {'class' : "aditem-main--top--left"}).text.replace('\n', '')
+        self.price = main.find('p', {'class' : "aditem-main--middle--price-shipping--price"}).string.replace('\n', '').replace(' ', '')
+
+    def __eq__(self, __value: object) -> bool:
+        return self.url == __value.url
+    
+    def __str__(self) -> str:
+        out_str = self.url + '\n' 
+        out_str += self.title + '\n' 
+        out_str += self.price + ' - ' 
+        out_str += self.location
+        return out_str
+    
+    def __hash__(self) -> int:
+        return hash(self.url)
+        
+
+
+if __name__ == '__main__':
+    bot = KleinanzeigenBot(TEST_URL, 'test')
+
+    bot.show_articles()
+
+

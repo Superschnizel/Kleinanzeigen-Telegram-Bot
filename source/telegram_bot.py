@@ -1,11 +1,10 @@
 import logging
+import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from kleinanzeigenbot import KleinanzeigenBot
 
-API_TOKEN = '6509130308:AAHdEMCtiYulOgAf7EFDFFHc3QwaED1loPI'
-CHAT_ID = 589158099
-TEST_URL = 'https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/preis::1000/c203l3331+wohnung_mieten.verfuegbarm_i:10%2C+wohnung_mieten.verfuegbary_i:2023%2C'
+personal_chat_id = 0
 
 registered_bots = []
 fetch_job_started = False
@@ -114,15 +113,31 @@ async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
         if len(articles) <= 0:
             return
 
-        await context.bot.send_message(chat_id=CHAT_ID, text=f"I found some new articles for your search {bot.name}!")
+        await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
 
         for a in articles:
-            await context.bot.send_message(chat_id=CHAT_ID, text=f"https://www.kleinanzeigen.de{a}")
+            message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}"
+            await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode='HTML')
 
 
 
 if __name__ == '__main__':
-    application = ApplicationBuilder().token(API_TOKEN).build()
+
+    print(os.getcwd())
+
+    try:
+        with open('token.txt') as f:
+            lines = f.readlines()
+            token = lines[0].replace('\n','')
+            personal_chat_id = int(lines[1])
+    except Exception as e:
+        print(f"something went wrong while trying to read 'token.txt', please make sure that the file is in located in the working directory: {os.getcwd()}\n {e}")
+        raise SystemExit
+
+    print(token)
+    print(personal_chat_id)
+
+    application = ApplicationBuilder().token(token).build()
     job_queue = application.job_queue
 
     start_handler = CommandHandler('start', start)
