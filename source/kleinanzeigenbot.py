@@ -55,13 +55,16 @@ class KleinanzeigenBot:
             newSet.add(KleinanzeigenItem(article))
         
         newArticles = newSet.difference(self.mainSet)
-        self.mainSet = newSet
+        self.mainSet = self.mainSet.union(newArticles)
 
         return newArticles
     
     def show_articles(self) -> None:
         for item in self.mainSet:
             print(item)
+    
+    def num_items(self):
+        return len(self.mainSet)
 
     
 class KleinanzeigenItem:

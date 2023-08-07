@@ -79,11 +79,11 @@ async def clear_bots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=info)
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    info = "status: " + ("running" if fetch_job_started else "idle")
+    info = "status: " + ('<b style="color:#00FF00">running</b>' if fetch_job_started else '<b style="color:#FF0000">idle</b>')
     info += "\nregistered bots:"
     for bot in registered_bots:
-        info += f"\n{bot.name}"
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=info)
+        info += f"\n{bot.name}: {bot.num_items()} items registered"
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=info, parse_mode='HTML')
 
 async def remove_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -104,8 +104,6 @@ async def remove_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if after <= 0:
         await stop(update, context)
 
-
-
 async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
     for bot in registered_bots:
         articles = bot.get_new_articles()
@@ -113,10 +111,10 @@ async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
         if len(articles) <= 0:
             return
 
-        await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
+        # await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
 
         for a in articles:
-            message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}"
+            message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}\n<i>search: {bot.name}</i>"
             await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode='HTML')
 
 
