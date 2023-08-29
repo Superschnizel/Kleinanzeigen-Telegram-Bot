@@ -12,3 +12,5 @@ pyvenv.cfg
 pip-selfcheck.json
 *.pyc
 token.txt
+geckodriver.log
+webdriver/geckodriver.exe

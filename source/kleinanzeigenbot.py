@@ -1,4 +1,5 @@
 import requests
+import re
 from bs4 import BeautifulSoup
 
 DEFAULT_HEADERS = {
@@ -16,6 +17,37 @@ DEFAULT_HEADERS = {
 }
 
 TEST_URL = 'https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/preis::1000/c203l3331+wohnung_mieten.verfuegbarm_i:10%2C+wohnung_mieten.verfuegbary_i:2023%2C'
+
+class KleinanzeigenItem:
+
+    def __init__(self, article) -> None:
+        self.url = article['data-href']
+        self.id = self.url.split('/')[-1]
+        main = article.find('div', {'class' : 'aditem-main'})
+        self.title = main.a.string
+        self.location = main.find('div', {'class' : "aditem-main--top--left"}).text.replace('\n', '')
+        self.price = main.find('p', {'class' : "aditem-main--middle--price-shipping--price"}).string.replace('\n', '').replace(' ', '')
+
+    def __eq__(self, __value: object) -> bool:
+        return self.url == __value.url
+    
+    def __str__(self) -> str:
+        out_str = self.url + '\n' 
+        out_str += self.title + '\n' 
+        out_str += self.price + ' - ' 
+        out_str += self.location
+        return out_str
+    
+    def __hash__(self) -> int:
+        return hash(self.id)
+    
+    def check_filters(self, filters):
+        for pattern in filters:
+            # Use re.search with IGNORECASE flag to check if the pattern matches self.url case-insensitively
+            if re.search(pattern, self.url, re.IGNORECASE):
+                return False  # Return False if a match is found
+        
+        return True
 
 class KleinanzeigenBot:
 
@@ -40,7 +72,7 @@ class KleinanzeigenBot:
 
         self.invalid_link_flag = len(self.mainSet) <= 0
 
-    def get_new_articles(self) -> set:
+    def get_new_articles(self) -> set[KleinanzeigenItem]:
         response = requests.get(
             self.url,
             headers=self.headers,
@@ -67,27 +99,7 @@ class KleinanzeigenBot:
         return len(self.mainSet)
 
     
-class KleinanzeigenItem:
 
-    def __init__(self, article) -> None:
-        self.url = article['data-href']
-        main = article.find('div', {'class' : 'aditem-main'})
-        self.title = main.a.string
-        self.location = main.find('div', {'class' : "aditem-main--top--left"}).text.replace('\n', '')
-        self.price = main.find('p', {'class' : "aditem-main--middle--price-shipping--price"}).string.replace('\n', '').replace(' ', '')
-
-    def __eq__(self, __value: object) -> bool:
-        return self.url == __value.url
-    
-    def __str__(self) -> str:
-        out_str = self.url + '\n' 
-        out_str += self.title + '\n' 
-        out_str += self.price + ' - ' 
-        out_str += self.location
-        return out_str
-    
-    def __hash__(self) -> int:
-        return hash(self.url)
         
 
 

@@ -6,7 +6,8 @@ from kleinanzeigenbot import KleinanzeigenBot
 
 personal_chat_id = 0
 
-registered_bots = []
+registered_bots:list[KleinanzeigenBot] = []
+filters = []
 fetch_job_started = False
 
 logging.basicConfig(
@@ -62,6 +63,23 @@ async def add_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.job_queue.run_repeating(fetch_articles, interval=120, first=10)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"added new bot: {bot.name}")
 
+async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args
+
+    for filter in args:
+        filters.append(filter)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"added new filter(s): {filter}")
+
+async def show_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(filters) <= 0:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"No active filters")
+        return
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"active filters: {filters}")
+
+async def clear_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    filters.clear()
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"cleared all filters.")
+
 async def clear_bots(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     info = ""
@@ -114,9 +132,10 @@ async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
         # await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
 
         for a in articles:
+            if not a.check_filters[filters]:
+                continue
             message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}\n<i>search: {bot.name}</i>"
             await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode='HTML')
-
 
 
 if __name__ == '__main__':
@@ -145,6 +164,9 @@ if __name__ == '__main__':
     clear_bots_handler = CommandHandler('clear_bots', clear_bots)
     status_handler = CommandHandler('status', status)
     remove_bot_handler = CommandHandler('remove_bot', remove_bot)
+    add_filter_handler = CommandHandler('add_filter', add_filter)
+    show_filters_handler = CommandHandler('show_filters', show_filters)
+    clear_filter_handler = CommandHandler('clear_filters', clear_filters)
     application.add_handler(start_handler)
     application.add_handler(start_bots_handler)
     application.add_handler(stop_handler)
@@ -152,6 +174,9 @@ if __name__ == '__main__':
     application.add_handler(clear_bots_handler)
     application.add_handler(status_handler)
     application.add_handler(remove_bot_handler)
+    application.add_handler(add_filter_handler)
+    application.add_handler(show_filters_handler)
+    application.add_handler(clear_filter_handler)
     
     # drop_pending_updates discards all updates before startup
     application.run_polling(drop_pending_updates=True)
