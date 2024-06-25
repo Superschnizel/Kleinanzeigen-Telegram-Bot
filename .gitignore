@@ -14,3 +14,5 @@ pip-selfcheck.json
 token.txt
 geckodriver.log
 webdriver/geckodriver.exe
+
+pyrightconfig.json
