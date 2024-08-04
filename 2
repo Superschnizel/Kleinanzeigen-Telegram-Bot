@@ -1,8 +1,8 @@
+import contextlib
 import logging
 import os
 from functools import reduce
 from typing import Dict, List
-from requests.exceptions import RetryError
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from kleinanzeigenbot import KleinanzeigenBot, re
@@ -183,20 +183,15 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chatClient.add_filter(filter)
 
     filterList = reduce(lambda a, b: a + "\n- " + b, chatClient.filters, "\n- ")
-    await bot_respond(update, context, f"added new filter(s): {filterList}")
+    await bot_respond(update, context, f"added new filter(s): {chatClient}")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"added new filter(s): {filter}")
 
 
 async def show_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chatClient = await get_chat_client(update, context)
-    if chatClient == None:
-        return
-
-    if len(chatClient.filters) <= 0:
+    if len(filters) <= 0:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"No active filters")
         return
-
-    filterList = reduce(lambda a, b: a + "\n- " + b, chatClient.filters, "\n- ")
-    await bot_respond(update, context, f"current filter(s): {filterList}")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"active filters: {filters}")
 
 
 async def clear_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -206,11 +201,7 @@ async def clear_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
     :param update: the current update
     :param context: the current context
     """
-    chatClient = await get_chat_client(update, context)
-    if chatClient == None:
-        return
-
-    chatClient.filters.clear()
+    filters.clear()
 
     await bot_respond(update, context, "cleared all filters")
 
@@ -222,33 +213,32 @@ async def clear_bots(update: Update, context: ContextTypes.DEFAULT_TYPE):
     :param update: the current update
     :param context: the current context
     """
-    chatClient = await get_chat_client(update, context)
-    if chatClient == None:
-        return
 
-    # stop running fetch jobs.
-    chatClient.stop_fetch_job()
+    info = ""
+    global fetch_job_started
 
-    info = "Cleared registered bots. removed bots:"
+    if fetch_job_started:
+        fetch_job_started = False
+        for job in context.job_queue.jobs():
+            job.schedule_removal()
 
-    for bot in chatClient.registered_bots:
-        info += f"\n- {bot.name} -- {bot.url}"
-    chatClient.registered_bots.clear()
+        info += "stopped fetch job\n"
 
-    await bot_respond(update, context, info)
+    info += "cleared registered bots. removed bots:"
+
+    for bot in registered_bots:
+        info += f"\n\n{bot.name} -- {bot.url}"
+    registered_bots.clear()
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=info)
 
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chatClient = await get_chat_client(update, context)
-    if chatClient == None:
-        return
-
-    info = "status: " + ('<b style="color:#00FF00">running</b>' if chatClient.fetch_job_running() else '<b style="color:#FF0000">idle</b>')
-    info += "\nregistered links:"
-    for bot in chatClient.registered_bots:
+    info = "status: " + ('<b style="color:#00FF00">running</b>' if fetch_job_started else '<b style="color:#FF0000">idle</b>')
+    info += "\nregistered bots:"
+    for bot in registered_bots:
         info += f"\n{bot.name}: {bot.num_items()} items registered"
-
-    await context.bot.send_message(chat_id=chatClient.id, text=info, parse_mode="HTML")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=info, parse_mode="HTML")
 
 
 async def remove_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -258,42 +248,40 @@ async def remove_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if len(args) != 1:
-        await bot_respond(
-            update,
-            context,
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
             text="wrong number of arguments. usage:\n/remove_bot <name>",
         )
         return
 
-    chatClient = await get_chat_client(update, context)
-    if chatClient == None:
+    global registered_bots
+    before = len(registered_bots)
+    if before <= 0:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="There are no registered bots")
         return
+    registered_bots = list(filter(lambda x: x.name != args[0], registered_bots))
 
-    if not chatClient.remove_bot(args[0]):
-        await bot_respond(update, context, "could not remove bot from active list. are you sure it exists?")
-        return
-
-    message = f"successfully removed {args[0]}."
-
-    if len(chatClient.registered_bots) <= 0:
-        message += "\nStopping fetch job, because there are no more active bots."
-        chatClient.stop_fetch_job()
+    after = len(registered_bots)
+    if after < before:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"removed bot {args[0]}")
+    if after <= 0:
+        await stop(update, context)
 
 
-# async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
-#     for bot in registered_bots:
-#         articles = bot.get_new_articles()
-#
-#         if len(articles) <= 0:
-#             return
-#
-#         # await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
-#
-#         for a in articles:
-#             if not a.check_filters(filters):
-#                 continue
-#             message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}\n<i>search: {bot.name}</i>"
-#             await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode="HTML")
+async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
+    for bot in registered_bots:
+        articles = bot.get_new_articles()
+
+        if len(articles) <= 0:
+            return
+
+        # await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
+
+        for a in articles:
+            if not a.check_filters(filters):
+                continue
+            message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}\n<i>search: {bot.name}</i>"
+            await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode="HTML")
 
 
 if __name__ == "__main__":
