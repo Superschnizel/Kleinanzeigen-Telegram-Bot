@@ -14,6 +14,9 @@ registered_bots_dict: Dict[int, ChatClient] = {}
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -48,7 +51,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     :param context: [TODO:description]
     """
 
-    message = f"welcome. Available commands are:\n\n/start_bots  -- start fetch with registered bots\n/stop -- stop fetch job\n/add_bot <name> <link> -- add a bot\n/clear_bots -- stop and clear list of bots\n/status -- get status informations"
+    message = f"""Welcome. Available commands are:
+
+    /start -- Show this message
+    /start_bots  -- start fetching with registered bots
+    /stop -- stop fetching
+    /add_bot <name> <link> -- add a bot that scans the specified link
+    /remove_bot <name> -- stop and remove a bot
+    /clear_bots -- stop and clear all registered bots
+    /status -- get status information
+    /add_filter -- add a filter to filter out unwanted messages
+    /show_filters -- show active filters
+    /clear_filters -- clear all filters"""
     await bot_respond(update, context, message)
 
 
@@ -164,7 +178,7 @@ async def add_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chatClient.add_bot(bot)
 
-    await bot_respond(update, context, f"added new bot: {bot.name}")
+    await bot_respond(update, context, f"added new bot: {bot.name}, with {bot.num_items()} items registered.")
 
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
