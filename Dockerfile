@@ -13,4 +13,4 @@ COPY ./token.txt ./token.txt
 RUN pip install -r ./requirements.txt
 
 # run the python app
-CMD ["python", "source/telegram_bot"]
+CMD ["python", "source/telegram_bot.py"]
