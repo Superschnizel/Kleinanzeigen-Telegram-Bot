@@ -1,4 +1,4 @@
-FROM Python:latest
+FROM python:latest
 
 # Copy application source
 COPY ./source ./source
