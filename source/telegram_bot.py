@@ -6,7 +6,7 @@ from requests.exceptions import RetryError
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from kleinanzeigenbot import KleinanzeigenBot, re
-from source.ChatClient import ChatClient
+from chat_client import ChatClient
 
 personal_chat_id = 0
 
