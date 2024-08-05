@@ -1,14 +1,12 @@
 import logging
 import os
 from functools import reduce
-from typing import Dict, List
-from requests.exceptions import RetryError
+from typing import Dict
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from kleinanzeigenbot import KleinanzeigenBot, re
+from kleinanzeigenbot import KleinanzeigenBot
 from chat_client import ChatClient
 
-personal_chat_id = 0
 
 registered_bots_dict: Dict[int, ChatClient] = {}
 # filters = []
@@ -192,7 +190,7 @@ async def show_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if len(chatClient.filters) <= 0:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"No active filters")
+        await bot_respond(update, context, "no active filters")
         return
 
     filterList = reduce(lambda a, b: a + "\n- " + b, chatClient.filters, "\n- ")
@@ -279,40 +277,23 @@ async def remove_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message += "\nStopping fetch job, because there are no more active bots."
         chatClient.stop_fetch_job()
 
-
-# async def fetch_articles(context: ContextTypes.DEFAULT_TYPE):
-#     for bot in registered_bots:
-#         articles = bot.get_new_articles()
-#
-#         if len(articles) <= 0:
-#             return
-#
-#         # await context.bot.send_message(chat_id=personal_chat_id, text=f"I found some new articles for your search {bot.name}!")
-#
-#         for a in articles:
-#             if not a.check_filters(filters):
-#                 continue
-#             message = f"<b>{a.title}</b>\n{a.price} -- <i>{a.location}</i>\nhttps://www.kleinanzeigen.de{a.url}\n<i>search: {bot.name}</i>"
-#             await context.bot.send_message(chat_id=personal_chat_id, text=message, parse_mode="HTML")
+    await bot_respond(update, context, message)
 
 
 if __name__ == "__main__":
 
-    print(os.getcwd())
-
+    # Get the Telegram API Token from token.txt
     try:
         with open("token.txt") as f:
             lines = f.readlines()
             token = lines[0].replace("\n", "")
-            personal_chat_id = int(lines[1])
     except Exception as e:
         print(
             f"something went wrong while trying to read 'token.txt', please make sure that the file is in located in the working directory: {os.getcwd()}\n {e}"
         )
         raise SystemExit
 
-    print(token)
-    print(personal_chat_id)
+    logging.info("token read, starting application")
 
     application = ApplicationBuilder().token(token).build()
     job_queue = application.job_queue
@@ -328,6 +309,8 @@ if __name__ == "__main__":
     show_filters_handler = CommandHandler("show_filters", show_filters)
     clear_filter_handler = CommandHandler("clear_filters", clear_filters)
 
+    logging.info("Adding handlers")
+
     application.add_handler(start_handler)
     application.add_handler(start_bots_handler)
     application.add_handler(stop_handler)
@@ -341,3 +324,5 @@ if __name__ == "__main__":
 
     # drop_pending_updates discards all updates before startup
     application.run_polling(drop_pending_updates=True)
+
+    logging.info("Application started")

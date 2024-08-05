@@ -6,20 +6,6 @@ from bs4 import BeautifulSoup
 
 DEFAULT_HEADERS = ["User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0"]
 
-# "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-# "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
-# "Accept-Encoding": "gzip, deflate, br",
-# "DNT": "1",
-# "Connection": "keep-alive",
-# "Upgrade-Insecure-Requests": "1",
-# "Sec-Fetch-Dest": "document",
-# "Sec-Fetch-Mode": "navigate",
-# "Sec-Fetch-Site": "none",
-# "Sec-Fetch-User": "?1",
-# "Cookie": "CSRF-TOKEN=7cb70770-19da-4cb5-8bf1-7cce30543a19; clientId=undefined; overlayV21=seen; bm_mi=EE83749E86B7913DFAEF265907CFED20~YAAQToUVAuQWXgaRAQAAM97aHhgj76GgLTBaHD5usSiYw/Q+kSMTiiTmZ/I0yfgxS+LqetPxYb+UJ+NoCgBXyA9qd/h8qR9o4rz+5ub0HN1tXxLPN9oOMROSQziH6Pp8JhzrOOgErokhOPu/YwJIfwqru0C6UNxwBn5fdcZt/LTY49NueJM7O2wr0RRdmB/n4PWeqUEdXNJgfbiePLa5eZ9lMfHnUpDy9a/1twh3CuoDfLw2V2hIF4wpEOdPBLwHSpkx88Yq1S8vfKzkP5FxRXJ45VZPwzH2jInpUJm95UDb8ViRvwTEOOmxtDw5jmuA7dUhmg==~1",
-
-DEFAULT_COOKIES = {"CSRF-TOKEN": "7cb70770-19da-4cb5-8bf1-7cce30543a19"}
-
 TEST_URL = "https://www.kleinanzeigen.de/s-wohnung-mieten/berlin/preis::1000/c203l3331+wohnung_mieten.verfuegbarm_i:10%2C+wohnung_mieten.verfuegbary_i:2023%2C"
 
 
@@ -28,6 +14,7 @@ class KleinanzeigenItem:
     def __init__(self, article) -> None:
         self.url = article["data-href"]
         self.id = self.url.split("/")[-1]
+
         main = article.find("div", {"class": "aditem-main"})
         self.title = main.a.string
         self.location = main.find("div", {"class": "aditem-main--top--left"}).text.replace("\n", "")
@@ -56,6 +43,9 @@ class KleinanzeigenItem:
 
 
 class KleinanzeigenBot:
+    """
+    Bot that querries a specified link and returns new articles if found
+    """
 
     def __init__(self, url: str, name: str) -> None:
         self.name = name
