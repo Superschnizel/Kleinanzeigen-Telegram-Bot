@@ -16,9 +16,15 @@ class KleinanzeigenItem:
         self.id = self.url.split("/")[-1]
 
         main = article.find("div", {"class": "aditem-main"})
-        self.title = main.a.string
-        self.location = main.find("div", {"class": "aditem-main--top--left"}).text.replace("\n", "")
-        self.price = main.find("p", {"class": "aditem-main--middle--price-shipping--price"}).string.replace("\n", "").replace(" ", "")
+        if main is None:
+            print("main object of article could not be found")
+            return
+        location = main.find("div", {"class": "aditem-main--top--left"}).text
+        price = main.find("p", {"class": "aditem-main--middle--price-shipping--price"}).text
+
+        self.title = main.find("h2", {"class": "text-module-begin"}).text
+        self.location = location.replace("\n", "") if location is not None else "location unknown"
+        self.price = price.replace("\n", "").replace(" ", "") if price is not None else "? €"
 
     def __eq__(self, __value: object) -> bool:
         return isinstance(__value, KleinanzeigenItem) and self.url == __value.url
