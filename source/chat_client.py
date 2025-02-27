@@ -64,7 +64,7 @@ class ChatClient:
             articles = bot.get_new_articles()
 
             if len(articles) <= 0:
-                return
+                continue
 
             for a in articles:
                 if not a.check_filters(self.filters):
