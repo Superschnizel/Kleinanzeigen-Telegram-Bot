@@ -26,7 +26,7 @@ Create a python virtual environment, install required packages and run the proje
 cd [install directory]
 py -m venv .
 pip install -r requirements.txt
-python source/kleinanzeigen_bot.py
+python source/telegram_bot.py
 ```
 
 ## Controlling the Bot
