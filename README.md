@@ -33,7 +33,7 @@ python source/telegram_bot.py
 
 The Bot offers the following commands:
 
-- `/start` -- Show all availabel commands
+- `/start` -- Show all available commands
 - `/add_bot` <name> <link> -- add a bot that scans the specified link
 - `/start_bots`  -- start fetching with registered bots
 - `/stop` -- stop fetching
@@ -43,3 +43,23 @@ The Bot offers the following commands:
 - `/add_filter` -- add a filter to filter out unwanted messages
 - `/show_filters` -- show active filters
 - `/clear_filters` -- clear all filters
+
+### Example usage
+
+To specify a search simply go on kleinanzeigen.de, create your search parameters and copy the URL.
+
+1. Add a bot with a name and search link:
+```
+/add_bot fahrrad https://www.kleinanzeigen.de/s-fahrraeder/herren/c217+fahrraeder.art_s:herren
+```
+2. Start the bot
+```
+/start_bots
+```
+3. Check the status of the running searches:
+```
+/status
+```
+
+You can add or remove multiple Searches. 
+If there is a large amount of unwanted messages (eg. searches instead of offers) you can create filters to ignore these messages. Given filters are interpreted in the python regular expression syntax.
