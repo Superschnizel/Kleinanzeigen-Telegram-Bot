@@ -68,7 +68,7 @@ You can remove a search by sending the /remove\_search command with the name of 
     /stop -- stop fetching for searches
     /add\_search <name> <link> -- add a search that scans the specified link
     /remove\_search <name> -- stop and remove a search
-    /clear\_search -- stop and clear all registered searches
+    /clear\_searches -- stop and clear all registered searches
     /status -- get status information
     /add\_filter -- add a filter to filter out unwanted messages
     /show\_filters -- show active filters
