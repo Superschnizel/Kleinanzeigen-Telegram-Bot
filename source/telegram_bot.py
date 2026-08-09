@@ -51,18 +51,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     :param context: [TODO:description]
     """
 
-    message = f"""Welcome. Available commands are:
+    message = f"""Welcome. This is a Telegram bot designed for faster notification when a new offer is created for a specific search on Kleinanzeigen.de.\n\n
+*How to use:*
+To create a search, simply go to Kleinanzeigen.de and enter your specific search parameters and copy the link to that search. This can then be added to the Bot by entering the command
+
+    /add\_search <Name for your search> <link>
+
+Once you have added one or multiple searches you can activate them by sending the /start\_searches command, a message will be send whenever a new entry is detected for a search.
+Use the /status command to get information on all currently running searches.
+You can remove a search by sending the /remove\_search command with the name of the search.\n
+
+*Complete List of available commands:*
 
     /start -- Show this message
-    /start_bots  -- start fetching with registered bots
-    /stop -- stop fetching
-    /add_bot <name> <link> -- add a bot that scans the specified link
-    /remove_bot <name> -- stop and remove a bot
-    /clear_bots -- stop and clear all registered bots
+    /start\_searches  -- start fetching with registered searches
+    /stop -- stop fetching for searches
+    /add\_search <name> <link> -- add a search that scans the specified link
+    /remove\_search <name> -- stop and remove a search
+    /clear\_search -- stop and clear all registered searches
     /status -- get status information
-    /add_filter -- add a filter to filter out unwanted messages
-    /show_filters -- show active filters
-    /clear_filters -- clear all filters"""
+    /add\_filter -- add a filter to filter out unwanted messages
+    /show\_filters -- show active filters
+    /clear\_filters -- clear all filters"""
     await bot_respond(update, context, message)
 
 
@@ -138,10 +148,7 @@ async def bot_respond(update: Update, context: ContextTypes.DEFAULT_TYPE, text: 
         print("could not get id for effective_chat!")
         return
 
-    await context.bot.send_message(
-        chat_id=chat.id,
-        text=text,
-    )
+    await context.bot.send_message(chat_id=chat.id, text=text, parse_mode="markdown")
 
 
 async def add_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -313,12 +320,12 @@ if __name__ == "__main__":
     job_queue = application.job_queue
 
     start_handler = CommandHandler("start", start)
-    start_bots_handler = CommandHandler("start_bots", start_bots)
+    start_bots_handler = CommandHandler("start_searches", start_bots)
     stop_handler = CommandHandler("stop", stop)
-    add_bot_handler = CommandHandler("add_bot", add_bot)
-    clear_bots_handler = CommandHandler("clear_bots", clear_bots)
+    add_bot_handler = CommandHandler("add_search", add_bot)
+    clear_bots_handler = CommandHandler("clear_searches", clear_bots)
     status_handler = CommandHandler("status", status)
-    remove_bot_handler = CommandHandler("remove_bot", remove_bot)
+    remove_bot_handler = CommandHandler("remove_search", remove_bot)
     add_filter_handler = CommandHandler("add_filter", add_filter)
     show_filters_handler = CommandHandler("show_filters", show_filters)
     clear_filter_handler = CommandHandler("clear_filters", clear_filters)
